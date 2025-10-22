@@ -1,0 +1,23 @@
+.logoWrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(255, 59, 15, 0.9), rgba(255, 177, 0, 0.9));
+  color: #110502;
+  font-family: 'Bebas Neue', 'Segoe UI', sans-serif;
+  letter-spacing: 0.18em;
+  font-size: 1.2rem;
+  text-transform: uppercase;
+  box-shadow: 0 8px 24px rgba(255, 94, 0, 0.35);
+}
+
+.symbol {
+  font-weight: 700;
+}
+
+.flame {
+  font-size: 1.3rem;
+}
