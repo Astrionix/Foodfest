@@ -55,10 +55,10 @@ export const useExperienceStore = create<ExperienceState>((set) => ({
         if (challenge.id !== id) return challenge
         if (challenge.status === 'available') {
           updatedPoints += challenge.reward
-          return { ...challenge, status: 'completed' }
+          return { ...challenge, status: 'completed' as ChallengeStatus }
         }
         if (challenge.status === 'locked') {
-          return { ...challenge, status: 'available' }
+          return { ...challenge, status: 'available' as ChallengeStatus }
         }
         return challenge
       })
@@ -80,7 +80,7 @@ export const useExperienceStore = create<ExperienceState>((set) => ({
             points: state.points + 120,
             challenges: state.challenges.map((challenge) => {
               if (challenge.id === 'guntur-endurance' && challenge.status === 'locked') {
-                return { ...challenge, status: 'available' }
+                return { ...challenge, status: 'available' as ChallengeStatus }
               }
               return challenge
             }),
@@ -93,7 +93,7 @@ export const useExperienceStore = create<ExperienceState>((set) => ({
         if (challenge.id !== id || challenge.status === 'completed') return challenge
         if (challenge.status === 'available') {
           updatedPoints += challenge.reward
-          return { ...challenge, status: 'completed' }
+          return { ...challenge, status: 'completed' as ChallengeStatus }
         }
         return challenge
       })
