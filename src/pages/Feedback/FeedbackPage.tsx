@@ -14,6 +14,7 @@ function FeedbackPage() {
   const stopLeaderboardStream = useFeedbackStore((state) => state.stopLeaderboardStream)
   const submitRating = useFeedbackStore((state) => state.submitRating)
   const [focusedDish, setFocusedDish] = useState<string | null>(null)
+  const [personalRatings, setPersonalRatings] = useState<Record<string, number>>({})
 
   const animatedDishes = useMemo(() => feedbackDishes, [])
 
@@ -27,6 +28,10 @@ function FeedbackPage() {
   }, [fetchLeaderboard, startLeaderboardStream, stopLeaderboardStream])
 
   const handleRate = (dishId: string, value: number) => {
+    setPersonalRatings((current) => ({
+      ...current,
+      [dishId]: value,
+    }))
     submitRating(dishId, value).catch(() => {})
     setFocusedDish(dishId)
   }
@@ -45,7 +50,12 @@ function FeedbackPage() {
 
       <section className={styles.cards}>
         {animatedDishes.map((dish, index) => {
-          const rating = ratings[dish.id] ?? 0
+          const summary = ratings[dish.id]
+          const average = summary?.average ?? 0
+          const roundedAverage = Math.round(average)
+          const totalStars = summary?.totalStars ?? 0
+          const ratingCount = summary?.ratingCount ?? 0
+          const personalRating = personalRatings[dish.id] ?? 0
           return (
             <article
               key={dish.id}
@@ -60,13 +70,15 @@ function FeedbackPage() {
               <div className={styles.stars}>
                 {Array.from({ length: MAX_STARS }, (_, starIndex) => {
                   const starValue = starIndex + 1
-                  const active = starValue <= rating
+                  const active = starValue <= (personalRating || roundedAverage)
                   return (
                     <button
                       key={starValue}
                       type="button"
                       className={`${styles.starButton} ${active ? styles.starActive : ''}`.trim()}
                       onClick={() => handleRate(dish.id, starValue)}
+                      data-active={active}
+                      aria-pressed={personalRating === starValue}
                       aria-label={`Rate ${dish.name} ${starValue} out of ${MAX_STARS}`}
                     >
                       ★
@@ -74,6 +86,18 @@ function FeedbackPage() {
                   )
                 })}
               </div>
+              {ratingCount > 0 || personalRating > 0 ? (
+                <div className={styles.starMeta}>
+                  <span>
+                    {ratingCount > 0
+                      ? `${totalStars.toLocaleString()} ★ from ${ratingCount} rating${ratingCount === 1 ? '' : 's'}`
+                      : 'Your rating will kick off the totals!'}
+                  </span>
+                  {personalRating > 0 ? (
+                    <span className={styles.personalMeta}>{`Your rating: ${personalRating} ★`}</span>
+                  ) : null}
+                </div>
+              ) : null}
             </article>
           )
         })}

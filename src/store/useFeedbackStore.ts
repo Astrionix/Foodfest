@@ -2,13 +2,13 @@ import type { RealtimeChannel } from '@supabase/supabase-js'
 import { create } from 'zustand'
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient'
 
-export type FeedbackRatings = Record<string, number>
-
-type LeaderboardEntry = {
-  id: string
-  averageRating: number
+export type FeedbackSummary = {
+  average: number
+  totalStars: number
   ratingCount: number
 }
+
+export type FeedbackSummaries = Record<string, FeedbackSummary>
 
 type FeedbackRow = {
   dish_id: string
@@ -18,7 +18,7 @@ type FeedbackRow = {
 }
 
 type FeedbackState = {
-  ratings: FeedbackRatings
+  ratings: FeedbackSummaries
   loading: boolean
   error: string | null
   fetchLeaderboard: () => Promise<void>
@@ -29,14 +29,14 @@ type FeedbackState = {
 
 const FEEDBACK_TABLE = 'feedback_votes'
 
-const mockLeaderboard: FeedbackRatings = {
-  'cucumber-boats': 4,
-  'nachos-salad': 5,
-  mocktail: 5,
-  'bhel-poori': 4,
+const mockLeaderboard: FeedbackSummaries = {
+  'cucumber-boats': { average: 4, totalStars: 16, ratingCount: 4 },
+  'nachos-salad': { average: 5, totalStars: 25, ratingCount: 5 },
+  mocktail: { average: 5, totalStars: 20, ratingCount: 4 },
+  'bhel-poori': { average: 4, totalStars: 12, ratingCount: 3 },
 }
 
-const aggregateRatings = (rows: FeedbackRow[]): FeedbackRatings => {
+const aggregateRatings = (rows: FeedbackRow[]): FeedbackSummaries => {
   if (!rows.length) {
     return {}
   }
@@ -53,11 +53,16 @@ const aggregateRatings = (rows: FeedbackRow[]): FeedbackRatings => {
     record.count += 1
   }
 
-  const ratings: FeedbackRatings = {}
+  const ratings: FeedbackSummaries = {}
   totals.forEach((value, key) => {
     if (value.count === 0) return
     const average = value.sum / value.count
-    ratings[key] = Math.max(0, Math.min(5, Math.round(average)))
+    const boundedAverage = Math.max(0, Math.min(5, average))
+    ratings[key] = {
+      average: boundedAverage,
+      totalStars: value.sum,
+      ratingCount: value.count,
+    }
   })
   return ratings
 }
@@ -136,9 +141,17 @@ export const useFeedbackStore = create<FeedbackState>((set, get) => ({
   submitRating: async (dishId, value, userId) => {
     const state = get()
     const previous = state.ratings[dishId]
+    const currentTotalStars = previous?.totalStars ?? 0
+    const currentCount = previous?.ratingCount ?? 0
+    const nextTotalStars = currentTotalStars + value
+    const nextCount = currentCount + 1
     const optimistic = {
       ...state.ratings,
-      [dishId]: value,
+      [dishId]: {
+        average: Math.max(0, Math.min(5, nextTotalStars / nextCount)),
+        totalStars: nextTotalStars,
+        ratingCount: nextCount,
+      },
     }
     set({ ratings: optimistic })
 
@@ -154,13 +167,19 @@ export const useFeedbackStore = create<FeedbackState>((set, get) => ({
       }
       await get().fetchLeaderboard()
     } catch (error) {
-      set((current) => ({
-        ratings: {
-          ...current.ratings,
-          [dishId]: previous ?? 0,
-        },
-        error: error instanceof Error ? error.message : 'Unable to reach rating service',
-      }))
+      set((current) => {
+        const updatedRatings = { ...current.ratings }
+        if (previous) {
+          updatedRatings[dishId] = previous
+        } else {
+          delete updatedRatings[dishId]
+        }
+
+        return {
+          ratings: updatedRatings,
+          error: error instanceof Error ? error.message : 'Unable to reach rating service',
+        }
+      })
     }
   },
 }))

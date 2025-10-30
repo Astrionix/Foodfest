@@ -66,6 +66,22 @@
   gap: 0.4rem;
 }
 
+.starMeta {
+  margin-top: 0.6rem;
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+  color: rgba(255, 244, 229, 0.7);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.personalMeta {
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  color: rgba(255, 244, 229, 0.85);
+}
+
 .starButton {
   width: 2.4rem;
   height: 2.4rem;

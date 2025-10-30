@@ -25,7 +25,12 @@ create policy "Allow anon insert on feedback_votes"
   to anon
   with check (true);
 
+-- Grants should remain minimal; rely on policies rather than broad PUBLIC access.
+revoke all on public.feedback_votes from public;
+grant select, insert on public.feedback_votes to anon;
+
 alter table public.feedback_votes enable row level security;
 
 -- Enable realtime for the feedback_votes table via Settings > Database > Replication.
--- Toggle the table on in the UI after running this script.
+-- If the dashboard toggle is unavailable, run the command below instead:
+alter publication supabase_realtime add table public.feedback_votes;
